@@ -1,0 +1,202 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jmanTV | City Ghost Edition</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        /* --- ALL CSS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background-color: #050505; color: white; }
+
+        /* Sign Up Wall */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: flex; justify-content: center; align-items: center;
+        }
+        .auth-card { width: 380px; padding: 40px; border: 2px solid #0088ff; border-radius: 15px; text-align: center; background: #111; }
+        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #333; background: #000; color: white; border-radius: 4px; }
+        .auth-btn { width: 100%; padding: 12px; background: #0088ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* City-Themed Navbar */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: #0f0f0f; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #fbc02d;
+        }
+        .logo-text { color: #fbc02d; font-size: 24px; font-weight: bold; cursor: pointer; }
+        .nav-middle { display: flex; align-items: center; flex: 0 1 500px; gap: 10px; }
+        .search-bar { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 40px; outline: none; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+
+        /* Sidebar */
+        main { display: flex; }
+        .sidebar { width: 220px; background: #0f0f0f; height: calc(100vh - 56px); position: sticky; top: 56px; border-right: 1px solid #222; }
+        .side-link { display: flex; align-items: center; padding: 15px 25px; cursor: pointer; color: #888; }
+        .side-link:hover { color: white; background: #222; }
+        .side-link i { margin-right: 20px; }
+
+        /* Video Grid & Ghost Effect */
+        .content { flex: 1; padding: 25px; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .video-card { position: relative; cursor: pointer; background: #1a1a1a; border-radius: 12px; overflow: hidden; }
+        .video-card img { width: 100%; display: block; }
+        
+        /* The Haunted Ghost (Daisy09 Style) */
+        .ghost-ovl {
+            position: absolute; top: 10%; right: 10%; width: 40px; height: 40px;
+            background: rgba(255, 100, 200, 0.4); border-radius: 50%;
+            filter: blur(8px); opacity: 0; pointer-events: none;
+            animation: ghost-flicker 8s infinite;
+        }
+        @keyframes ghost-flicker {
+            0%, 48%, 52%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2) translate(-5px, -5px); }
+        }
+
+        /* Creator Page (City Mall Style) */
+        #create-view { display: none; text-align: center; }
+        #cam-feed { width: 100%; max-width: 800px; border: 6px solid #fbc02d; border-radius: 20px; background: black; margin: 20px 0; }
+        
+        .follow-btn { margin-top: 10px; padding: 8px 20px; border-radius: 20px; border: none; background: white; color: black; font-weight: bold; cursor: pointer; }
+        .ad-card { border: 2px dashed #fbc02d; background: #1a1700; padding: 15px; }
+
+        @media (max-width: 800px) { .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <!-- 1. MONKE LOGIN -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h1 style="color: #fbc02d;">CITY MALL ACCESS</h1>
+            <p style="color: #666; margin: 10px 0;">Sign in to see #jmancurly & #K9</p>
+            <form id="signup-form">
+                <input type="text" id="user-name" placeholder="Gorilla Name" required>
+                <input type="email" placeholder="Email" required>
+                <button type="submit" class="auth-btn">ENTER CITY</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-left" onclick="showView('home')">
+            <div class="logo-text">jmanTV <span style="color:white; font-size:14px;">CITY</span></div>
+        </div>
+        <div class="nav-middle">
+            <input type="text" class="search-bar" placeholder="Search #K9 #ghost #city">
+        </div>
+        <div class="nav-right">
+            <div class="auth-btn" style="padding: 8px 15px; border-radius:20px;" onclick="showView('create')">
+                <i class="material-icons" style="font-size:18px; vertical-align:middle;">videocam</i> Create
+            </div>
+            <i class="material-icons" onclick="logout()" style="cursor:pointer">logout</i>
+            <div id="user-icon" style="width:34px; height:34px; background:#0088ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">?</div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- 3. SIDEBAR -->
+        <aside class="sidebar">
+            <div class="side-link" onclick="showView('home')"><i class="material-icons">home</i> City Square</div>
+            <div class="side-link"><i class="material-icons">store</i> Cosmetics</div>
+            <div class="side-link"><i class="material-icons">warning</i> Ghost Reports</div>
+        </aside>
+
+        <!-- 4. CONTENT -->
+        <div class="content">
+            <div id="home-view">
+                <div class="video-grid" id="main-grid"></div>
+            </div>
+
+            <!-- CITY MALL CAMERA (CREATOR) -->
+            <div id="create-view">
+                <h1 style="color:#fbc02d;">Live from the Mall</h1>
+                <video id="cam-feed" autoplay playsinline></video>
+                <div style="display:flex; justify-content:center; gap:15px;">
+                    <button class="auth-btn" style="width:180px;" onclick="startCam()">Start Camera</button>
+                    <button class="auth-btn" style="width:180px; background:#444;" onclick="stopCam()">Stop</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 5. ALL JAVASCRIPT -->
+    <script>
+        const API_KEY = 'YOUR_PEXELS_API_KEY'; // PASTE KEY HERE
+        let stream = null;
+
+        // Login Logic
+        window.onload = () => {
+            const user = localStorage.getItem('city_user');
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('user-icon').innerText = user.charAt(0).toUpperCase();
+            }
+            loadCityContent();
+        };
+
+        document.getElementById('signup-form').onsubmit = (e) => {
+            e.preventDefault();
+            localStorage.setItem('city_user', document.getElementById('user-name').value);
+            location.reload();
+        };
+
+        function logout() { localStorage.removeItem('city_user'); location.reload(); }
+
+        function showView(v) {
+            document.getElementById('home-view').style.display = (v === 'home' ? 'block' : 'none');
+            document.getElementById('create-view').style.display = (v === 'create' ? 'block' : 'none');
+            if(v === 'home') stopCam();
+        }
+
+        async function startCam() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('cam-feed').srcObject = stream;
+            } catch (err) { alert("Camera blocked!"); }
+        }
+
+        function stopCam() { if(stream) stream.getTracks().forEach(t => t.stop()); }
+
+        // Video Loading with City & Ghost Theme
+        async function loadCityContent() {
+            const grid = document.getElementById('main-grid');
+            try {
+                // Fetching City/Urban style clips
+                const res = await fetch(`https://pexels.com`, {
+                    headers: { Authorization: API_KEY }
+                });
+                const data = await res.json();
+                
+                let html = '';
+                data.videos.forEach((vid, i) => {
+                    // Injecting "Haunted K9" Ads
+                    if (i > 0 && i % 4 === 0) {
+                        html += `
+                        <div class="video-card ad-card">
+                            <h3><span style="background:#fbc02d; color:black; padding:2px 5px; border-radius:3px; font-size:10px;">AD</span>K9 GHOST INSURANCE</h3>
+                            <p>Protect your monke from #bans and #ghosts in #City.</p>
+                            <button class="follow-btn">GET SAFE</button>
+                        </div>`;
+                    }
+
+                    // Ghost flicker (Daisy09) is added as a hidden layer on every card
+                    html += `
+                    <div class="video-card">
+                        <div class="ghost-ovl"></div>
+                        <img src="${vid.image}">
+                        <div style="padding:12px;">
+                            <h4 style="font-size:14px; margin-bottom:5px;">jman sees #K9 get BANNED by #Daisy09 in #City</h4>
+                            <p style="color:#888; font-size:12px;">jmancurly • ${Math.floor(Math.random()*3)}M views</p>
+                            <button class="follow-btn" onclick="this.innerText='FOLLOWED'">FOLLOW</button>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = html.replace(/#(\w+)/g, '<span style="color:#0088ff; font-weight:bold;">#$1</span>');
+            } catch (e) { grid.innerHTML = "Add API Key on line 183 to see the hauntings."; }
+        }
+    </script>
+</body>
+</html>
