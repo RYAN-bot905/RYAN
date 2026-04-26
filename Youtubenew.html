@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate YouTube Clone + Creator Mode</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Roboto, Arial, sans-serif; }
+        body { background-color: #f9f9f9; overflow-x: hidden; }
+
+        /* Auth Overlay */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; display: flex; justify-content: center;
+            align-items: center; z-index: 2000;
+        }
+        .auth-card { width: 400px; padding: 40px; border: 1px solid #dadce0; border-radius: 8px; text-align: center; }
+        #signup-form { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        #signup-form input { padding: 13px; border: 1px solid #dadce0; border-radius: 4px; }
+        .auth-btn { background: #065fd4; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
+
+        /* Navbar */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: white; position: sticky; top: 0; z-index: 100;
+        }
+        .logo { height: 20px; cursor: pointer; }
+        .nav-middle { display: flex; align-items: center; flex: 0 1 600px; gap: 10px; }
+        .search-container { display: flex; width: 100%; border: 1px solid #ccc; border-radius: 40px; overflow: hidden; }
+        .search-container input { flex: 1; padding: 10px 20px; border: none; outline: none; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+
+        /* Create Button */
+        .create-btn { 
+            display: flex; align-items: center; gap: 5px; background: #f2f2f2; 
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: 500;
+        }
+        .create-btn:hover { background: #e5e5e5; }
+
+        /* Main Layout */
+        main { display: flex; }
+        .sidebar { width: 240px; height: calc(100vh - 56px); background: white; position: sticky; top: 56px; padding-top: 10px; }
+        .side-link { display: flex; align-items: center; padding: 10px 25px; cursor: pointer; font-size: 14px; }
+        .side-link i { margin-right: 20px; }
+
+        /* Content Area */
+        .content { flex: 1; padding: 20px; }
+        #video-view, #create-view { width: 100%; }
+        #create-view { display: none; text-align: center; }
+
+        /* Camera Feed */
+        #camera-stream { 
+            width: 100%; max-width: 800px; background: #000; 
+            border-radius: 15px; margin: 20px auto; display: block; 
+        }
+        .record-controls { display: flex; justify-content: center; gap: 20px; }
+
+        /* Video Grid & Hashtags */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .video-card { cursor: pointer; }
+        .thumbnail img { width: 100%; border-radius: 12px; }
+        .hashtag { color: #065fd4; font-weight: 500; }
+        .follow-btn { margin-top: 10px; padding: 6px 15px; border-radius: 20px; border: none; background: #000; color: #fff; cursor: pointer; }
+        .ad-card { border: 1px solid #fbc02d; background: #fffdeb; padding: 10px; border-radius: 12px; }
+
+        @media (max-width: 800px) { .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <!-- SIGN UP -->
+    <div id="auth-overlay" class="overlay">
+        <div class="auth-card">
+            <img src="https://wikimedia.org" height="30">
+            <h2>Create Account</h2>
+            <form id="signup-form">
+                <input type="text" id="user-name" placeholder="Full Name" required>
+                <input type="email" placeholder="Email" required>
+                <button type="submit" class="auth-btn">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <i class="material-icons">menu</i>
+            <img class="logo" src="https://wikimedia.org" onclick="showView('video')">
+        </div>
+        <div class="nav-middle">
+            <div class="search-container">
+                <input type="text" placeholder="Search #hashtags">
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="create-btn" onclick="showView('create')">
+                <i class="material-icons">video_call</i><span>Create</span>
+            </div>
+            <i class="material-icons" onclick="logout()">logout</i>
+            <div id="user-initial" style="width:32px; height:32px; background:#065fd4; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center;">?</div>
+        </div>
+    </nav>
+
+    <main>
+        <aside class="sidebar">
+            <div class="side-link" onclick="showView('video')"><i class="material-icons">home</i><p>Home</p></div>
+            <div class="side-link"><i class="material-icons">subscriptions</i><p>Subscriptions</p></div>
+        </aside>
+
+        <div class="content">
+            <!-- HOME VIEW -->
+            <div id="video-view">
+                <div class="video-grid" id="dynamic-grid"></div>
+            </div>
+
+            <!-- CREATE VIEW (CAMERA) -->
+            <div id="create-view">
+                <h1>Go Live</h1>
+                <p>Allow camera access to start creating #content</p>
+                <video id="camera-stream" autoplay playsinline></video>
+                <div class="record-controls">
+                    <button class="follow-btn" onclick="startCamera()" style="background:#065fd4">Start Camera</button>
+                    <button class="follow-btn" onclick="stopCamera()">Stop</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_KEY = 'YOUR_PEXELS_API_KEY'; // REQUIRED FOR VIDEOS
+        let stream = null;
+
+        // Login Logic
+        window.onload = () => {
+            const user = localStorage.getItem('yt_user');
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('user-initial').innerText = user[0].toUpperCase();
+            }
+            loadVideos();
+        };
+
+        document.getElementById('signup-form').onsubmit = (e) => {
+            e.preventDefault();
+            localStorage.setItem('yt_user', document.getElementById('user-name').value);
+            location.reload();
+        };
+
+        function logout() { localStorage.removeItem('yt_user'); location.reload(); }
+
+        // View Toggling
+        function showView(view) {
+            if(view === 'video') {
+                document.getElementById('video-view').style.display = 'block';
+                document.getElementById('create-view').style.display = 'none';
+                stopCamera();
+            } else {
+                document.getElementById('video-view').style.display = 'none';
+                document.getElementById('create-view').style.display = 'block';
+            }
+        }
+
+        // Camera Logic
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById('camera-stream').srcObject = stream;
+            } catch (err) {
+                alert("Camera access denied! Please check permissions.");
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('camera-stream').srcObject = null;
+            }
+        }
+
+        // Dynamic Videos + Ads + Hashtags
+        async function loadVideos() {
+            const grid = document.getElementById('dynamic-grid');
+            try {
+                const res = await fetch(`https://pexels.com`, {
+                    headers: { Authorization: API_KEY }
+                });
+                const data = await res.json();
+                grid.innerHTML = data.videos.map((v, i) => {
+                    let ad = (i % 4 === 0) ? `<div class="video-card ad-card"><h3><span class="ad-badge">Ad</span>Buy #Cool Gear</h3><p>Sponsored by ShopNow</p></div>` : '';
+                    return ad + `
+                        <div class="video-card">
+                            <div class="thumbnail"><img src="${v.image}"></div>
+                            <div class="video-info">
+                                <div class="text-content">
+                                    <h3>${v.user.name}'s #epic #vibe</h3>
+                                    <p>${v.user.name} • ${Math.floor(Math.random()*100)}K views</p>
+                                    <button class="follow-btn" onclick="this.innerText='Following'">Follow</button>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('').replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+            } catch (e) { grid.innerHTML = "Add API Key to see videos."; }
+        }
+    </script>
+</body>
+</html>
