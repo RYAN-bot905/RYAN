@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My YouTube Clone</title>
+    <!-- Google Icons -->
+    <link href="https://googleapis.com" rel="stylesheet">
+    
+    <style>
+        /* --- ALL CSS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Roboto, Arial, sans-serif; }
+        body { background-color: #f9f9f9; }
+
+        /* Sign Up Overlay */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 2000; display: flex; 
+            justify-content: center; align-items: center;
+        }
+        .auth-card { width: 380px; padding: 40px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        .auth-btn { width: 100%; padding: 12px; background: #065fd4; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* Navigation */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: white; position: sticky; top: 0; z-index: 100;
+        }
+        .logo { height: 20px; cursor: pointer; }
+        .nav-middle { display: flex; align-items: center; flex: 0 1 600px; }
+        .search-bar { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 40px 0 0 40px; outline: none; }
+        .search-btn { padding: 7px 20px; background: #f8f8f8; border: 1px solid #ccc; border-left: none; border-radius: 0 40px 40px 0; cursor: pointer; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+
+        /* Sidebar */
+        main { display: flex; }
+        .sidebar { width: 240px; background: white; height: 100vh; position: sticky; top: 56px; padding-top: 10px; }
+        .side-link { display: flex; align-items: center; padding: 12px 25px; cursor: pointer; }
+        .side-link:hover { background: #f2f2f2; }
+        .side-link i { margin-right: 25px; }
+
+        /* Main Content Views */
+        .content { flex: 1; padding: 20px; }
+        #video-grid-view, #create-view { width: 100%; }
+        #create-view { display: none; text-align: center; }
+
+        /* Video Cards & Ads */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .video-card { cursor: pointer; margin-bottom: 20px; }
+        .video-card img { width: 100%; border-radius: 12px; background: #eee; }
+        .video-info { display: flex; gap: 12px; margin-top: 10px; }
+        .user-icon { width: 36px; height: 36px; border-radius: 50%; background: #065fd4; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .hashtag { color: #065fd4; font-weight: 500; }
+        .follow-btn { padding: 6px 15px; border-radius: 20px; border: none; background: black; color: white; cursor: pointer; margin-top: 5px; }
+        .follow-btn.following { background: #eee; color: black; }
+        
+        .ad-card { border: 1px solid #fbc02d; background: #fffdeb; padding: 15px; border-radius: 12px; }
+        .ad-label { background: #fbc02d; padding: 2px 5px; font-size: 10px; border-radius: 3px; font-weight: bold; margin-right: 5px; }
+
+        /* Camera Feed */
+        #cam-feed { width: 100%; max-width: 700px; border-radius: 15px; background: black; margin: 20px 0; }
+
+        @media (max-width: 800px) { .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SIGN UP PAGE -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <img src="https://wikimedia.org" height="30">
+            <h2 style="margin: 15px 0;">Sign Up</h2>
+            <form id="signup-form">
+                <input type="text" id="name-input" placeholder="Your Name" required>
+                <input type="email" placeholder="Email" required>
+                <button type="submit" class="auth-btn">Join Now</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <i class="material-icons" style="cursor:pointer">menu</i>
+            <img class="logo" src="https://wikimedia.org" onclick="switchView('home')">
+        </div>
+        <div class="nav-middle">
+            <input type="text" class="search-bar" placeholder="Search #hashtags">
+            <button class="search-btn"><i class="material-icons">search</i></button>
+        </div>
+        <div class="nav-right">
+            <div onclick="switchView('create')" style="cursor:pointer; display:flex; align-items:center; gap:5px; background:#eee; padding:5px 12px; border-radius:20px;">
+                <i class="material-icons">video_call</i> Create
+            </div>
+            <i class="material-icons" onclick="logout()" title="Logout" style="cursor:pointer">logout</i>
+            <div id="user-circle" class="user-icon">?</div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- 3. SIDEBAR -->
+        <aside class="sidebar">
+            <div class="side-link" onclick="switchView('home')"><i class="material-icons">home</i> Home</div>
+            <div class="side-link"><i class="material-icons">explore</i> Shorts</div>
+            <div class="side-link"><i class="material-icons">subscriptions</i> Subs</div>
+        </aside>
+
+        <!-- 4. CONTENT -->
+        <div class="content">
+            
+            <!-- HOME VIEW -->
+            <div id="video-grid-view">
+                <div class="video-grid" id="main-grid"></div>
+            </div>
+
+            <!-- CREATE VIEW (CAMERA) -->
+            <div id="create-view">
+                <h1>Creator Studio</h1>
+                <p>Ready to go live, #creator?</p>
+                <video id="cam-feed" autoplay playsinline></video>
+                <br>
+                <button class="auth-btn" style="width:200px" onclick="startCamera()">Start Camera</button>
+                <button class="auth-btn" style="width:200px; background:#666;" onclick="stopCamera()">Off</button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 5. ALL JAVASCRIPT -->
+    <script>
+        const API_KEY = 'YOUR_PEXELS_API_KEY'; // <--- PUT YOUR KEY HERE
+        let cameraStream = null;
+
+        // ON LOAD: Check for saved account
+        window.onload = () => {
+            const savedName = localStorage.getItem('user_name');
+            if (savedName) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('user-circle').innerText = savedName.charAt(0).toUpperCase();
+            }
+            fetchVideos();
+        };
+
+        // SIGN UP LOGIC
+        document.getElementById('signup-form').onsubmit = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name-input').value;
+            localStorage.setItem('user_name', name);
+            location.reload();
+        };
+
+        function logout() {
+            localStorage.removeItem('user_name');
+            location.reload();
+        }
+
+        // VIEW SWITCHING
+        function switchView(view) {
+            if (view === 'home') {
+                document.getElementById('video-grid-view').style.display = 'block';
+                document.getElementById('create-view').style.display = 'none';
+                stopCamera();
+            } else {
+                document.getElementById('video-grid-view').style.display = 'none';
+                document.getElementById('create-view').style.display = 'block';
+            }
+        }
+
+        // CAMERA LOGIC
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('cam-feed').srcObject = cameraStream;
+            } catch (err) {
+                alert("Camera error: " + err.message);
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                document.getElementById('cam-feed').srcObject = null;
+            }
+        }
+
+        // LOAD VIDEOS, ADS, AND HASHTAGS
+        async function fetchVideos() {
+            const grid = document.getElementById('main-grid');
+            try {
+                const res = await fetch(`https://pexels.com`, {
+                    headers: { Authorization: API_KEY }
+                });
+                const data = await res.json();
+                
+                let contentHTML = '';
+                data.videos.forEach((vid, i) => {
+                    // Inject an Ad card every 3rd slot
+                    if (i % 3 === 0 && i !== 0) {
+                        contentHTML += `
+                        <div class="video-card ad-card">
+                            <h3><span class="ad-label">Ad</span>Buy this #awesome gear!</h3>
+                            <p>Sponsored by TechBrand</p>
+                            <button class="follow-btn" style="background:#065fd4">Shop Now</button>
+                        </div>`;
+                    }
+
+                    // Regular Video Card
+                    const rawTitle = `${vid.user.name}'s #epic #video`;
+                    const blueTitle = rawTitle.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+
+                    contentHTML += `
+                    <div class="video-card">
+                        <img src="${vid.image}">
+                        <div class="video-info">
+                            <div class="user-icon">${vid.user.name.charAt(0)}</div>
+                            <div>
+                                <h4>${blueTitle}</h4>
+                                <p>${vid.user.name} • ${Math.floor(Math.random()*900)}K views</p>
+                                <button class="follow-btn" onclick="followToggle(this)">Follow</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = contentHTML;
+            } catch (e) {
+                grid.innerHTML = "<h3>Error: Please add your Pexels API Key to the code to see videos!</h3>";
+            }
+        }
+
+        function followToggle(btn) {
+            btn.classList.toggle('following');
+            btn.innerText = btn.classList.contains('following') ? 'Following' : 'Follow';
+        }
+    </script>
+</body>
+</html>
