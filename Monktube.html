@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MonkeTube | 1-Hour Ghost Special</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background-color: #050505; color: white; overflow: hidden; }
+
+        /* --- THEATER MODE --- */
+        #theater-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .canvas-container {
+            width: 85%; max-width: 1000px; border: 5px solid #fbc02d;
+            border-radius: 20px; overflow: hidden; position: relative; background: #111;
+        }
+        canvas { width: 100%; display: block; }
+        #subtitle-box {
+            position: absolute; bottom: 30px; width: 100%; text-align: center;
+            font-size: 28px; font-weight: bold; text-shadow: 3px 3px 5px #000;
+        }
+
+        /* --- UI ELEMENTS --- */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: #0f0f0f; border-bottom: 2px solid #333; }
+        .logo { color: #fbc02d; font-size: 26px; font-weight: bold; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding: 30px; }
+        .video-card { background: #1a1a1a; border-radius: 15px; cursor: pointer; transition: 0.3s; overflow: hidden; }
+        .video-card:hover { transform: scale(1.05); border: 1px solid #fbc02d; }
+        .thumbnail-placeholder { width: 100%; height: 170px; background: linear-gradient(45deg, #111, #222); display: flex; align-items: center; justify-content: center; }
+        .btn { padding: 12px 25px; background: #fbc02d; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+
+        /* Chat Sidebar */
+        #chat-side { position: absolute; right: 20px; top: 100px; width: 250px; height: 60%; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; overflow-y: hidden; font-size: 14px; }
+        .chat-line { margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- NAV BAR -->
+    <nav>
+        <div class="logo">jmanTV <span style="color:white; font-size:12px;">CITY MALL</span></div>
+        <div style="display:flex; align-items:center; gap:20px;">
+            <i class="material-icons">search</i>
+            <div style="width:35px; height:35px; background:#0088ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">J</div>
+        </div>
+    </nav>
+
+    <!-- THEATER MODE -->
+    <div id="theater-overlay">
+        <div class="canvas-container">
+            <canvas id="main-player"></canvas>
+            <div id="subtitle-box">Click "Start Video" to Begin 1-Hour Special</div>
+        </div>
+        <div style="display:flex; gap:20px;">
+            <button class="btn" onclick="runOneHourScript()">START 1-HOUR VIDEO</button>
+            <button class="btn" style="background:#444; color:white;" onclick="closeVideo()">EXIT</button>
+        </div>
+        <div id="chat-side">
+            <h4 style="color:#fbc02d">Live Chat</h4>
+            <div id="chat-content"></div>
+        </div>
+    </div>
+
+    <!-- HOME GRID -->
+    <div class="grid">
+        <div class="video-card" onclick="openTheater()">
+            <div class="thumbnail-placeholder"><i class="material-icons" style="font-size:60px; color:#fbc02d;">play_circle_filled</i></div>
+            <div style="padding: 15px;">
+                <h3 id="vid-title">jman & K9: The 1-Hour Haunted City Special</h3>
+                <p style="color:#888; font-size:13px; margin-top:5px;">jmancurly • 10M views • 1 hour ago</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('main-player');
+        const ctx = canvas.getContext('2d');
+        const subtitle = document.getElementById('subtitle-box');
+        canvas.width = 1000; canvas.height = 562;
+
+        let jmanSpeech = false;
+        let k9Speech = false;
+        let ghostActive = false;
+        let isBanned = false;
+
+        // --- THE 1-HOUR SCRIPT DATA ---
+        const longScript = [
+            { s: "jman", t: "GREETINGS HUMANS! Today we are in City for ONE HOUR!" },
+            { s: "k9", t: "Jman, why are we here so long? I'm already scared." },
+            { s: "jman", t: "Because K9, the fans want to see the City Ghost!" },
+            { s: "k9", t: "I just saw a pink blur by the hat shop, Jman..." },
+            { s: "jman", t: "It's probably just a reflection of your yellow fur!" },
+            { s: "k9", t: "My fur isn't pink! Look! It's Daisy09!" },
+            { s: "jman", t: "Wait... why did the mall music just stop?" },
+            { s: "k9", t: "Jman, I can't move my controllers! HELP!" },
+            { s: "jman", t: "K9? Why is your nametag flickering red?!" },
+            { s: "k9", t: "IT'S HAPPENING! SHE'S BANNING ME! NOOOO!" },
+            { s: "jman", t: "K9!! HE'S GONE! HE TURNED INTO A STATUE!" },
+            { s: "jman", t: "I'm hiding in the tunnel. I'm literally alone now." },
+            { s: "jman", t: "Wait... K9? Is that you? No... the ghost is still here." }
+        ];
+
+        function openTheater() {
+            document.getElementById('theater-overlay').style.display = 'flex';
+            renderLoop();
+        }
+
+        function closeVideo() {
+            window.speechSynthesis.cancel();
+            document.getElementById('theater-overlay').style.display = 'none';
+        }
+
+        // --- REALISTIC VOICE ENGINE ---
+        async function runOneHourScript() {
+            isBanned = false; ghostActive = false;
+            for (let i = 0; i < 500; i++) { // Loops enough for 1 hour
+                const line = longScript[i % longScript.length];
+                
+                if (line.t.includes("BANNING")) ghostActive = true;
+                if (line.t.includes("GONE")) { isBanned = true; ghostActive = false; }
+                if (line.t.includes("GREETINGS")) isBanned = false;
+
+                await speakLine(line.t, line.s);
+                addChat(line.s);
+            }
+        }
+
+        function speakLine(text, speaker) {
+            return new Promise(resolve => {
+                const synth = window.speechSynthesis;
+                const talk = new SpeechSynthesisUtterance(text);
+                
+                if (speaker === "jman") {
+                    talk.pitch = 1.7; talk.rate = 1.3;
+                    talk.onstart = () => { jmanSpeech = true; subtitle.innerText = "jman: " + text; subtitle.style.color = "#0088ff"; };
+                    talk.onend = () => { jmanSpeech = false; resolve(); };
+                } else {
+                    talk.pitch = 0.7; talk.rate = 1.0;
+                    talk.onstart = () => { k9Speech = true; subtitle.innerText = "K9: " + text; subtitle.style.color = "#fbc02d"; };
+                    talk.onend = () => { k9Speech = false; resolve(); };
+                }
+                synth.speak(talk);
+            });
+        }
+
+        function addChat(speaker) {
+            const chat = document.getElementById('chat-content');
+            const names = ["MonkeFan", "VR_Gamer", "GtagPro", "DaisyHunter"];
+            const msgs = ["OMG K9 LOOK OUT", "WASHEDDD", "Is that a ghost??", "JMAN RUN!", "RIP K9"];
+            const div = document.createElement('div');
+            div.className = 'chat-line';
+            div.innerHTML = `<b style="color:#0088ff">${names[Math.floor(Math.random()*4)]}</b>: ${msgs[Math.floor(Math.random()*5)]}`;
+            chat.prepend(div);
+        }
+
+        // --- ANIMATION ENGINE ---
+        function renderLoop() {
+            ctx.fillStyle = "#111"; ctx.fillRect(0, 0, 1000, 562);
+
+            // Draw Jman (Blue)
+            ctx.fillStyle = "#0088ff";
+            ctx.beginPath(); ctx.arc(300, 350, 60, 0, 7); ctx.fill();
+            if(jmanSpeech) {
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.ellipse(300, 370, 20, 10 + Math.random()*15, 0, 0, 7); ctx.fill();
+            }
+
+            // Draw K9 (Yellow)
+            if(!isBanned) {
+                ctx.fillStyle = "#fbc02d";
+                ctx.beginPath(); ctx.arc(550, 350, 60, 0, 7); ctx.fill();
+                if(k9Speech) {
+                    ctx.fillStyle = "black";
+                    ctx.beginPath(); ctx.ellipse(550, 370, 20, 10 + Math.random()*15, 0, 0, 7); ctx.fill();
+                }
+            } else {
+                // Stone Statue K9
+                ctx.fillStyle = "#555";
+                ctx.beginPath(); ctx.arc(550, 350, 60, 0, 7); ctx.fill();
+                ctx.fillStyle = "red"; ctx.font = "bold 40px Arial"; ctx.fillText("BANNED", 500, 250);
+            }
+
+            // Ghost (Pink)
+            if(ghostActive) {
+                ctx.fillStyle = "rgba(255, 0, 255, 0.4)";
+                ctx.beginPath(); ctx.arc(800, 250 + Math.sin(Date.now()/200)*20, 70, 0, 7); ctx.fill();
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+    </script>
+</body>
+</html>
