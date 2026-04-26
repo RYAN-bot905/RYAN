@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonkeTube | The 1-Hour Ghost Special</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background-color: #050505; color: white; line-height: 1.6; }
+        
+        /* Navbar */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: #0f0f0f; border-bottom: 2px solid #fbc02d; position: sticky; top: 0; z-index: 100; }
+        .logo { color: #fbc02d; font-size: 26px; font-weight: bold; cursor: pointer; }
+        
+        /* Content Layout */
+        .container { display: flex; }
+        .sidebar { width: 240px; padding: 20px; height: calc(100vh - 60px); position: sticky; top: 60px; }
+        .main-content { flex: 1; padding: 30px; }
+        
+        /* Video Grid & Ghost */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .video-card { position: relative; cursor: pointer; background: #1a1a1a; border-radius: 15px; overflow: hidden; padding-bottom: 10px; }
+        .video-card img { width: 100%; height: 180px; object-fit: cover; }
+        
+        .ghost-mist { position: absolute; top: 20%; right: 10%; width: 50px; height: 50px; background: rgba(255, 100, 200, 0.3); border-radius: 50%; filter: blur(10px); opacity: 0; animation: ghost-haunt 10s infinite; }
+        @keyframes ghost-haunt { 0%, 90% { opacity: 0; } 95% { opacity: 0.5; transform: scale(1.5); } }
+
+        /* Script Section */
+        .script-box { margin-top: 50px; padding: 30px; background: #111; border-left: 4px solid #fbc02d; border-radius: 8px; }
+        .script-line { margin-bottom: 15px; }
+        .speaker { color: #fbc02d; font-weight: bold; }
+        
+        .btn { padding: 10px 20px; background: #fbc02d; color: black; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">MonkeTube <span style="font-size: 12px; color: #888;">GHOST EDITION</span></div>
+        <div class="nav-right">
+            <i class="material-icons" style="margin-right:20px; cursor:pointer;">video_call</i>
+            <div style="width:35px; height:35px; background:#0088ff; border-radius:50%; display:flex; align-items:center; justify-content:center;">J</div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <p style="margin-bottom:20px; color:#fbc02d;">#jmancurly</p>
+            <p style="margin-bottom:20px;">#K9Forever</p>
+            <p style="margin-bottom:20px;">#CityGhost</p>
+        </aside>
+
+        <main class="main-content">
+            <div class="grid" id="vid-grid">
+                <!-- Videos will load here -->
+            </div>
+
+            <div class="script-box">
+                <h2 style="color: #fbc02d; margin-bottom: 20px;">📜 THE HAUNTED SCRIPT: 1-HOUR SPECIAL</h2>
+                <div class="script-line"><span class="speaker">Jman:</span> "K9, look at me. If we find this ghost, I’m tagging her and I’m running to Forest. I'm not staying in City!"</div>
+                <div class="script-line"><span class="speaker">K9:</span> "Jman, you can't run. The Mall is sealed. Look at the exit... it's just static."</div>
+                <div class="script-line"><span class="speaker">Jman:</span> "STATIC?! Since when does Gorilla Tag have static walls? Lemming didn't add this! LEMMING, HELP!"</div>
+                <div class="script-line"><span class="speaker">K9:</span> "She's behind the hat stand, Jman. She's humming the Daisy song. I'm... I'm getting banned. Goodbye, monke."</div>
+                <div class="script-line" style="font-style: italic; color: #888;">[Loud screaming and glitch sounds fill the lobby as the screen turns pink]</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const titles = [
+            "K9 GOT BANNED FOREVER?! (City Ghost Sightings)",
+            "I Found Daisy09 in the City Mall..",
+            "The Ghost is in my Background! #Scary",
+            "I Played Gorilla Tag with a DEAD Ghost",
+            "Jman Hides from the Salmon Monke",
+            "The Final Ban: RIP K9"
+        ];
+
+        const grid = document.getElementById('vid-grid');
+        for(let i=0; i<6; i++) {
+            grid.innerHTML += `
+                <div class="video-card">
+                    <div class="ghost-mist"></div>
+                    <img src="https://picsum.photos{i+50}/320/180" alt="Video">
+                    <div style="padding:15px;">
+                        <h4 style="font-size:14px; margin-bottom:8px;">${titles[i]}</h4>
+                        <p style="color:#888; font-size:12px;">jmancurly • ${Math.floor(Math.random()*4)}M views</p>
+                        <button class="btn" style="margin-top:10px; font-size:10px;">FOLLOW MONKE</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
